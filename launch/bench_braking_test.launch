@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- X Y Z Y P R transform of marvel origin frame wrt map frame. Needs to be physically measured. -->
+    <arg name="origin_pos" default="1.52 -2.37 0 0.55 0 0"/>
+
+    <!-- Publish static TF of the origin anchor to map -->
+    <node pkg="tf" type="static_transform_publisher" name="marvel_tf" args=" $(arg origin_pos)  /map /marvel_origin 1"/>
+
+    <node pkg="araig_benchmarks" type="mock_marvel.py" name="mock_marvel" />
+
+    <node pkg="araig_interpreters" type="marvel_location_interpreter" name="marvel_interpreter" output="screen"> -->
+        <remap from="/marvel_interpreter/beacon1" to="/data/interpreter/location/robot"/>
+        <remap from="/marvel_interpreter/beacon2" to="/data/interpreter/location/obstacle"/>
+    </node>
+
+    <node pkg="araig_calculators" type="diff_pose_temporal_node" name="braking_distance" >
+        <remap from="/in_start" to="/signal/runner/stop_robot"/>
+        <remap from="/in_stop" to="/signal/calc/robot_has_stopped"/>
+        <remap from="/in_pose" to="/data/interpreter/location/robot"/>
+        <remap from="out_disp_position" to="/data/calc/braking_distance"/>
+    </node>
+
+    <node pkg="araig_benchmarks" type="bench_braking.py" name="bench_braking" output="screen" />
+
+</launch>
