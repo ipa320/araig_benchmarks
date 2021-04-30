@@ -7,6 +7,7 @@ from araig_msgs.msg import BoolStamped
 from std_msgs.msg import Float64
 # This is the base test runner from araig_test_runners:
 from base.base_runner import TestBase 
+import csv
 
 """"
 BASE INTERFACES
@@ -66,6 +67,10 @@ class BenchBraking(TestBase):
         avg_accuracy = 0.0
         error_list = []
         accuracy_list = []
+        filename = "/home/tejas/ARAIG/bench_results.csv"
+        with open(filename, mode='w') as my_csv:
+            my_writer=csv.writer(my_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            my_writer.writerow(["Trial No", "Calc Dist", "Sens Dist", "Err", "Acc"])
         for itr in range(0,self._number_of_loops):
             # Emulate runner sends stop.
             rospy.loginfo(rospy.get_name() + ": -----------------------Trial number {} ---------------- ".format(itr))
@@ -87,7 +92,7 @@ class BenchBraking(TestBase):
             with self._lock_calc_braking_distance:
                 calc_braking_distance = self._calc_braking_distance
             with self._lock_sensor_braking_distance:
-                sensor_braking_distance = self._sensor_braking_distance
+                sensor_braking_distance = abs(self._sensor_braking_distance)
 
             rospy.loginfo(rospy.get_name()+ ": Calc dist: {} | Sens dist: {}".format(calc_braking_distance, sensor_braking_distance))
 
@@ -102,6 +107,10 @@ class BenchBraking(TestBase):
             rospy.loginfo(rospy.get_name()+ ": Rolling Avg Err: {} Rolling Avg Acc: {}".format(avg_error, avg_accuracy))
             print("")
 
+            with open(filename, mode='a') as my_csv:
+                my_writer=csv.writer(my_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                my_writer.writerow([itr, calc_braking_distance, sensor_braking_distance, error, accuracy ])
+
         rospy.loginfo(rospy.get_name()+ ": Error STD: {} Accuracy STD: {}"
             .format( numpy.std(error_list) ,numpy.std(accuracy_list) ))
         rospy.loginfo(rospy.get_name()+ ": Error AVG: {} Accuracy AVG: {}"
@@ -109,6 +118,13 @@ class BenchBraking(TestBase):
         rospy.loginfo(rospy.get_name()+ ": Error Max Dev: {} Accuracy Max Dev: {}"
             .format( max(abs(el - numpy.average(error_list)) for el in error_list),
                      max(abs(el - numpy.average(accuracy_list)) for el in accuracy_list) ))
+
+        with open(filename, mode='a') as my_csv:
+                my_writer=csv.writer(my_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                my_writer.writerow([ "Error STD", "Error AVG", ])
+                my_writer.writerow([numpy.std(error_list), numpy.average(error_list)])
+                my_writer.writerow([ "Accuracy STD", "Accuracy AVG", ])
+                my_writer.writerow([numpy.std(accuracy_list), numpy.average(accuracy_list)])
                 
 if __name__ == "__main__":
     try:
